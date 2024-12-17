@@ -5,6 +5,8 @@ module Model
   # Implements class level method attribute.
   module ClassMethods
     def attribute(name, options = {})
+      @specified_attributes ||= []
+
       define_method name do
         instance_variable_get "@#{name}"
       end
@@ -16,41 +18,32 @@ module Model
         instance_variable_set "@#{name}", value
       end
 
-      Model.specified_attributes << { name: name, options: options }
+      self.instance_variable_get(:@specified_attributes) << { name: name, options: options }
     end
   end
 
   require 'date'
-
-  @specified_attributes = []
-
-  def self.specified_attributes
-    @specified_attributes
-  end
 
   def self.included(base)
     base.extend(ClassMethods)
   end
 
   def initialize(attributes = {})
-    Model.specified_attributes.each do |details|
+    self.class.instance_variable_get(:@specified_attributes).each do |details|
       attribute = details[:name]
       default_value = details.dig(:options, :default)
-      send("#{attribute}=", default_value)
-      # method("#{attribute}=").call(default_value)
+      method("#{attribute}=").call(default_value)
     end
 
     attributes.each_pair do |attribute, value|
-      send("#{attribute}=", value) if methods.include? attribute
-      #method("#{attribute}=").call(value) if methods.include? attribute
+      method("#{attribute}=").call(value) if methods.include? attribute
     end
   end
 
   def attributes
-    Model.specified_attributes.each_with_object({}) do |details, acc|
+    self.class.instance_variable_get(:@specified_attributes).each_with_object({}) do |details, acc|
       attribute = details[:name]
-      acc[attribute] = send(attribute)
-      #acc[attribute] = method(attribute).call
+      acc[attribute] = method(attribute).call
     end
   end
 
