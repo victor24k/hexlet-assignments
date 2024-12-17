@@ -36,18 +36,21 @@ module Model
     Model.specified_attributes.each do |details|
       attribute = details[:name]
       default_value = details.dig(:options, :default)
-      method("#{attribute}=").call(default_value)
+      send("#{attribute}=", default_value)
+      # method("#{attribute}=").call(default_value)
     end
 
     attributes.each_pair do |attribute, value|
-      method("#{attribute}=").call(value) if methods.include? attribute
+      send("#{attribute}=", value) if methods.include? attribute
+      #method("#{attribute}=").call(value) if methods.include? attribute
     end
   end
 
   def attributes
     Model.specified_attributes.each_with_object({}) do |details, acc|
       attribute = details[:name]
-      acc[attribute] = method(attribute.to_s).call
+      acc[attribute] = send(attribute)
+      #acc[attribute] = method(attribute).call
     end
   end
 
